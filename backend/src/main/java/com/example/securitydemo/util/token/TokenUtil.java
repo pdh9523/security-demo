@@ -53,7 +53,7 @@ public class TokenUtil {
      * @return accessToken, refreshToken 중 하나
      */
     public String createToken(String email, TokenType tokenType) {
-        Long expireTime = tokenType.getExpireTime() * 1000;
+        long expireTime = tokenType.getExpireTime() * 1000;
 
         return Jwts.builder()
                 .setSubject(email)
@@ -158,7 +158,10 @@ public class TokenUtil {
 
         // 새로운 토큰을 발급
         String email = loginCredential.getEmail();
-        getToken(email);
+        TokenResponseDto tokenResponseDto = getToken(email);
+
+        // 그리고 다시 response 에 담아 보내기
+        pushTokenOnCookie(response, tokenResponseDto);
     }
 
     /**
