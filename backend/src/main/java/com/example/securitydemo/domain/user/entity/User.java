@@ -22,18 +22,11 @@ public class User extends LoginCredential {
     @NotNull
     private String nickname;
 
-    @Builder
-    public User(String email, String password, String nickname) {
-        this.setEmail(email);  // 부모 클래스의 필드 사용
-        this.setPassword(password); // 부모 클래스의 필드 사용
-        this.nickname = nickname;
-    }
-
     public static User createUser(String email, String password, String nickname, PasswordEncoder passwordEncoder) {
-        return User.builder()
-                .email(email)
-                .password(passwordEncoder.encode(password))
-                .nickname(nickname)
-                .build();
+        User user = new User();
+        user.setEmail(email);
+        user.setPassword(passwordEncoder.encode(password));
+        user.setNickname(nickname);
+        return user;
     }
 }
