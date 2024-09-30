@@ -41,6 +41,20 @@ public class TokenAuthorizationFilter extends OncePerRequestFilter {
             return;
         }
 
+        if (Arrays.stream(whiteList.getWhiteListForSwagger())
+                .anyMatch(whiteList -> new AntPathRequestMatcher(whiteList).matches(request))) {
+            log.info("JWT FILTER PASS BY WHITELIST");
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        if (Arrays.stream(whiteList.getWhiteListForGet())
+                .anyMatch(whiteList -> new AntPathRequestMatcher(whiteList).matches(request))) {
+            log.info("JWT FILTER PASS BY WHITELIST");
+            filterChain.doFilter(request, response);
+            return;
+        }
+
 
         if (request.getMethod().equalsIgnoreCase("OPTION")) {
             response.setStatus(HttpServletResponse.SC_OK);
@@ -52,8 +66,8 @@ public class TokenAuthorizationFilter extends OncePerRequestFilter {
         // 쿠키에서 토큰 추출
         String accessToken = tokenUtil.extractToken(request, TokenType.accessToken);
         String refreshToken = tokenUtil.extractToken(request, TokenType.refreshToken);
-        System.out.println(accessToken);
-        System.out.println(refreshToken);
+
+
         // 1. 토큰이 제대로 추출된 경우
         if (accessToken != null && refreshToken != null) {
             // 1-1. 엑세스 토큰이 유효한 경우

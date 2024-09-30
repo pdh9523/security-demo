@@ -19,11 +19,13 @@ public class WhiteListConfig {
 
     private final String[] whiteList = {
             // 로그인 관련 엔드포인트
-            "/user",
-            "/user/login",
             "/oauth2/authorization/kakao",
             "/oauth2/authorization/naver",
             // 기본 설정 관련
             "/favicon.ico"
+    };
+
+    private final String[] whiteListForGet = {
+
     };
 }
