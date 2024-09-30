@@ -113,8 +113,6 @@ public class TokenUtil {
     ) {
         Cookie[] cookies = request.getCookies();
         for (Cookie cookie : cookies) {
-            System.out.println(cookie.getName());
-            System.out.println(tokenType.toString());
             if (cookie.getName().equals(tokenType.toString())) {
                 return cookie.getValue();
             }
