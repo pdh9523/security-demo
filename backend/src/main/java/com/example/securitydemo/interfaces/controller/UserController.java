@@ -16,7 +16,7 @@ public class UserController {
 
     private final UserService userService;
 
-    @PostMapping
+    @PostMapping("/register")
     public ResponseEntity<UserResponseDto> createUser(@RequestBody UserRequestDto userRequestDto) {
         return ResponseEntity.ok(userService.createUser(userRequestDto));
     }
@@ -25,4 +25,5 @@ public class UserController {
     public ResponseEntity<UserResponseDto> getMyInfo(@AuthenticationPrincipal User user) {
         return ResponseEntity.ok(userService.getMyInfo(user));
     }
+
 }
