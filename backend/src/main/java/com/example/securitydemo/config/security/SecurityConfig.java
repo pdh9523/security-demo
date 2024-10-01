@@ -5,6 +5,7 @@ import com.example.securitydemo.config.security.filter.TokenAuthorizationFilter;
 import com.example.securitydemo.config.security.handler.CustomAuthenticationFailureHandler;
 import com.example.securitydemo.config.security.handler.CustomAuthenticationSuccessHandler;
 import com.example.securitydemo.config.security.handler.CustomLogoutSuccessHandler;
+import com.example.securitydemo.config.security.provider.CustomAuthenticationProvider;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
@@ -33,6 +34,7 @@ import java.util.Collections;
         securedEnabled = true,
         jsr250Enabled = true)
 public class SecurityConfig {
+    private final ObjectMapper objectMapper;
     private final WhiteListConfig whiteList;
     private final TokenAuthorizationFilter tokenAuthorizationFilter;
     private final CustomLogoutSuccessHandler customLogoutSuccessHandler;
@@ -53,6 +55,7 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(whiteList.getWhiteList()).permitAll()
+//                        .requestMatchers(HttpMethod.GET, whiteList.getWhiteListForGet()).permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(tokenAuthorizationFilter, BasicAuthenticationFilter.class)
@@ -75,7 +78,6 @@ public class SecurityConfig {
     @Bean
     public CustomAuthenticationFilter customAuthenticationFilter(
             AuthenticationManager authenticationManager,
-            ObjectMapper objectMapper,
             CustomAuthenticationSuccessHandler customAuthenticationSuccessHandler,
             CustomAuthenticationFailureHandler customAuthenticationFailureHandler
     ) {
