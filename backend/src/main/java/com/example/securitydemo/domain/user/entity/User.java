@@ -1,20 +1,21 @@
 package com.example.securitydemo.domain.user.entity;
 
 import com.example.securitydemo.domain.loginCredential.entity.LoginCredential;
-import jakarta.persistence.Entity;
-import jakarta.persistence.PrimaryKeyJoinColumn;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Entity
 @Getter
 @Setter
-@NoArgsConstructor
 @Table(name = "users")
 @PrimaryKeyJoinColumn(name = "id")
 public class User extends LoginCredential {
@@ -28,5 +29,14 @@ public class User extends LoginCredential {
         user.setPassword(passwordEncoder.encode(password));
         user.setNickname(nickname);
         return user;
+    }
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    private List<String> roles = new ArrayList<>();  // 권한 정보
+
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return roles.stream()
+                .map(SimpleGrantedAuthority::new)
+                .collect(Collectors.toList());
     }
 }

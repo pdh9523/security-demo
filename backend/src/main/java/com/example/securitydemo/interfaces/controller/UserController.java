@@ -1,5 +1,6 @@
 package com.example.securitydemo.interfaces.controller;
 
+import com.example.securitydemo.config.security.principal.SecurityPrincipal;
 import com.example.securitydemo.domain.user.dto.UserRequestDto;
 import com.example.securitydemo.domain.user.dto.UserResponseDto;
 import com.example.securitydemo.domain.user.entity.User;
@@ -22,8 +23,8 @@ public class UserController {
     }
 
     @GetMapping("/my-info")
-    public ResponseEntity<UserResponseDto> getMyInfo(@AuthenticationPrincipal User user) {
+    public ResponseEntity<UserResponseDto> getMyInfo(@AuthenticationPrincipal SecurityPrincipal securityPrincipal) {
+        User user = securityPrincipal.toUser();
         return ResponseEntity.ok(userService.getMyInfo(user));
     }
-
 }

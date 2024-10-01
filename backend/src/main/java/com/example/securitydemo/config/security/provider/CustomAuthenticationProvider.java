@@ -1,7 +1,7 @@
-package com.example.securitydemo.config.security;
+package com.example.securitydemo.config.security.provider;
 
+import com.example.securitydemo.config.security.principal.SecurityPrincipal;
 import com.example.securitydemo.domain.loginCredential.service.LoginCredentialService;
-import com.example.securitydemo.domain.user.entity.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -25,13 +25,13 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
         String email = token.getName();
         String password = (String) token.getCredentials();
 
-        User user = (User) loginCredentialService.loadUserByUsername(email);
+        SecurityPrincipal securityPrincipal = loginCredentialService.loadUserByUsername(email);
 
-        if (!passwordEncoder.matches(password, user.getPassword())) {
+        if (!passwordEncoder.matches(password, securityPrincipal.getPassword())) {
             throw new BadCredentialsException("비밀번호가 틀렸습니다.");
         }
 
-        return new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
+        return new UsernamePasswordAuthenticationToken(securityPrincipal, null, securityPrincipal.getAuthorities());
     }
 
     @Override

@@ -1,9 +1,9 @@
 package com.example.securitydemo.util.token;
 
+import com.example.securitydemo.config.security.principal.SecurityPrincipal;
 import com.example.securitydemo.domain.loginCredential.entity.LoginCredential;
 import com.example.securitydemo.domain.loginCredential.repository.LoginCredentialRepository;
 import com.example.securitydemo.domain.loginCredential.service.LoginCredentialService;
-import com.example.securitydemo.domain.user.entity.User;
 import com.example.securitydemo.util.redis.RedisUtil;
 import com.example.securitydemo.util.token.dto.TokenResponseDto;
 import io.jsonwebtoken.*;
@@ -196,11 +196,11 @@ public class TokenUtil {
     public void authenticateWithToken(String token) throws RuntimeException {
         String email = getEmailFromToken(token);
         if (email != null) {
-            User user = (User) loginCredentialService.loadUserByUsername(email);
+            SecurityPrincipal securityPrincipal = loginCredentialService.loadUserByUsername(email);
             UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
-                    user,
+                    securityPrincipal,
                     null,
-                    user.getAuthorities()
+                    securityPrincipal.getAuthorities()
             );
             SecurityContextHolder.getContext().setAuthentication(authenticationToken);
         } else {
