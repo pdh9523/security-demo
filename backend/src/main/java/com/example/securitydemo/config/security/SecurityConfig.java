@@ -4,8 +4,8 @@ import com.example.securitydemo.config.security.filter.CustomAuthenticationFilte
 import com.example.securitydemo.config.security.filter.TokenAuthorizationFilter;
 import com.example.securitydemo.config.security.handler.CustomAuthenticationFailureHandler;
 import com.example.securitydemo.config.security.handler.CustomAuthenticationSuccessHandler;
+import com.example.securitydemo.config.security.handler.CustomLogoutSuccessHandler;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
 import org.springframework.context.annotation.Bean;
@@ -17,7 +17,6 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
@@ -36,12 +35,12 @@ import java.util.Collections;
 public class SecurityConfig {
     private final WhiteListConfig whiteList;
     private final TokenAuthorizationFilter tokenAuthorizationFilter;
+    private final CustomLogoutSuccessHandler customLogoutSuccessHandler;
     // 내부에 추가적으로 시큐리티 필터체인을 통과해야하는 요소를 삽입
     @Bean
     public WebSecurityCustomizer webSecurityCustomizer() {
         return web -> web.ignoring()
                 .requestMatchers(PathRequest.toStaticResources().atCommonLocations());
-        // 추가적인 제외 요소
     }
 
     @Bean
@@ -60,17 +59,16 @@ public class SecurityConfig {
                 .addFilterBefore(customAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 // 로그아웃 시 로직. "/user/logout" 엔드포인트로 들어오는 로직을 로그아웃으로 인지해 인증 제거, 쿠키 제거, 세션 비활성화 등의 처리를 수행한다.
                 .logout(logout -> logout
-                                .logoutUrl("/user/logout")
-                                .clearAuthentication(true)
-                                .deleteCookies("JSESSIONID", "access_token", "refresh_token")
-                                .invalidateHttpSession(true)
-                                .logoutSuccessHandler((request, response, authentication) -> {
-                                    SecurityContextHolder.clearContext();
-                                    response.setStatus(HttpServletResponse.SC_OK);
-                                    response.getWriter().write("Logout successful");
-                                    response.getWriter().flush();
-                                })
-                        )
+                        // 로그아웃 페이지에 대한 설정
+                        .logoutUrl("/api/user/logout")
+                        // 로그아웃 하면서 인증 정보를 삭제하고
+                        .clearAuthentication(true)
+                        // 쿠키를 삭제함
+                        .deleteCookies("access_token", "refresh_token")
+                        // 세션 무효화
+                        .invalidateHttpSession(true)
+                        .logoutSuccessHandler(customLogoutSuccessHandler)
+                )
                 .build();
     }
 
@@ -83,7 +81,7 @@ public class SecurityConfig {
     ) {
         CustomAuthenticationFilter customAuthenticationFilter = new CustomAuthenticationFilter(authenticationManager, objectMapper);
         // "/user/login" 엔드포인트로 들어오는 요청을 로그인으로 인지해 CustomAuthenticationFilter에서 처리하도록 지정한다.
-        customAuthenticationFilter.setFilterProcessesUrl("/user/login");
+        customAuthenticationFilter.setFilterProcessesUrl("/api/user/login");
         customAuthenticationFilter.setAuthenticationSuccessHandler(customAuthenticationSuccessHandler);    // '인증' 성공 시 해당 핸들러로 처리를 전가한다.
         customAuthenticationFilter.setAuthenticationFailureHandler(customAuthenticationFailureHandler);    // '인증' 실패 시 해당 핸들러로 처리를 전가한다.
         customAuthenticationFilter.afterPropertiesSet();
@@ -100,7 +98,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowCredentials(true);
-        configuration.addAllowedOrigin("*");
+        configuration.addAllowedOrigin("http://localhost:3000");
         configuration.addAllowedHeader("*");
         configuration.addAllowedMethod("*");
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
