@@ -29,6 +29,6 @@ public class AppConfig {
     public ObjectMapper objectMapper () {
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
-        return new ObjectMapper();
+        return objectMapper;
     }
 }
