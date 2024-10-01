@@ -14,8 +14,10 @@ export default function App() {
 
     function myInfo() {
         api.get("/user/my-info")
-            .then(response =>
-                setEmail(response.data.email)
+            .then(response => {
+                    console.log(response.data)
+                    setEmail(response.data.email)
+                }
             )
     }
 
