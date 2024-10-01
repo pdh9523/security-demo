@@ -20,6 +20,9 @@ public class CustomLogoutSuccessHandler extends SimpleUrlLogoutSuccessHandler {
     ) throws IOException {
         // 로그아웃 성공 후 200 OK 응답 설정
         response.setStatus(HttpServletResponse.SC_OK);
+        response.setCharacterEncoding("UTF-8");
+        response.setContentType("application/json");
+
         response.getWriter().write("로그아웃 되었습니다.");
         response.getWriter().flush();
     }
