@@ -1,6 +1,7 @@
 package com.example.securitydemo.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.context.annotation.Bean;
@@ -27,8 +28,11 @@ public class AppConfig {
 
     @Bean
     public ObjectMapper objectMapper () {
-        ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.registerModule(new JavaTimeModule());
-        return objectMapper;
+            ObjectMapper objectMapper = new ObjectMapper();
+            // JavaTimeModule을 등록
+            objectMapper.registerModule(new JavaTimeModule());
+            // 기본 직렬화 방식 추가
+            objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+            return objectMapper;
     }
 }
