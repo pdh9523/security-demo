@@ -4,6 +4,7 @@ import com.example.securitydemo.config.security.principal.SecurityPrincipal;
 import com.example.securitydemo.domain.loginCredential.entity.LoginCredential;
 import com.example.securitydemo.domain.loginCredential.repository.LoginCredentialRepository;
 import com.example.securitydemo.domain.loginCredential.service.LoginCredentialService;
+import com.example.securitydemo.util.cookie.CookieUtil;
 import com.example.securitydemo.util.redis.RedisUtil;
 import com.example.securitydemo.util.token.dto.TokenResponseDto;
 import io.jsonwebtoken.*;
@@ -21,15 +22,18 @@ import org.springframework.http.ResponseCookie;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
+import org.springframework.util.SerializationUtils;
 
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
+import java.util.Base64;
 import java.util.Date;
 
 @RequiredArgsConstructor
 @Component
 public class TokenUtil {
 
+    private final CookieUtil cookieUtil;
     private final RedisUtil redisUtil;
     private final LoginCredentialRepository loginCredentialRepository;
     private final LoginCredentialService loginCredentialService;
@@ -102,40 +106,14 @@ public class TokenUtil {
     }
 
     /**
-     * 쿠키에서 토큰을 추출
-     * @param request 서버 요청을 받아 동작
-     * @param tokenType accessToken/refreshToken 중 하나를 받음
-     * @return 토큰
-     */
-    public String extractToken(
-            @NonNull HttpServletRequest request,
-            TokenType tokenType
-    ) {
-        Cookie[] cookies = request.getCookies();
-        for (Cookie cookie : cookies) {
-            if (cookie.getName().equals(tokenType.toString())) {
-                return cookie.getValue();
-            }
-        }
-        return null;
-    }
-
-    /**
      * 쿠키에서 토큰을 삭제
      * @param response 서버에 응답이 나갈 때 동작
      */
     public void deleteTokenOnCookie(
             @NonNull HttpServletResponse response
     ) {
-        Cookie cookieRefresh = new Cookie("refresh_token", "");
-        cookieRefresh.setPath("/");
-        cookieRefresh.setMaxAge(0);
-        Cookie cookieAccess = new Cookie("access_token", "");
-        cookieAccess.setPath("/");
-        cookieAccess.setMaxAge(0);
-
-        response.addCookie(cookieAccess);
-        response.addCookie(cookieRefresh);
+        cookieUtil.deleteCookie(response, "refresh_token");
+        cookieUtil.deleteCookie(response, "access_token");
     }
 
     /**
@@ -159,7 +137,7 @@ public class TokenUtil {
         TokenResponseDto tokenResponseDto = getToken(email);
 
         // 그리고 다시 response 에 담아 보내기
-        pushTokenOnCookie(response, tokenResponseDto);
+        cookieUtil.pushTokenOnCookie(response, tokenResponseDto);
     }
 
     /**
@@ -206,28 +184,6 @@ public class TokenUtil {
         } else {
             throw new RuntimeException("인증 과정에서 문제가 발생했습니다.");
         }
-    }
-    /**
-     * 토큰을 쿠키에 푸시
-     * @param response  서버에 응답이 나갈 때 동작
-     * @param tokenResponseDto 엑세스 토큰과 리프레시 토큰
-     */
-    public void pushTokenOnCookie(
-            @NonNull HttpServletResponse response,
-            TokenResponseDto tokenResponseDto
-    ) {
-        ResponseCookie accessTokenCookie = ResponseCookie.from("access_token", tokenResponseDto.accessToken())
-                .httpOnly(true)
-                .path("/")
-                .maxAge(TokenType.accessToken.getExpireTime())
-                .build();
-        response.addHeader("Set-Cookie", accessTokenCookie.toString());
-        ResponseCookie refreshTokenCookie = ResponseCookie.from("refresh_token", tokenResponseDto.refreshToken())
-                .httpOnly(true)
-                .path("/")
-                .maxAge(TokenType.refreshToken.getExpireTime())
-                .build();
-        response.addHeader("Set-Cookie", refreshTokenCookie.toString());
     }
 }
 
