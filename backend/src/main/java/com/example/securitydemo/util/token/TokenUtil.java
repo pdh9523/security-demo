@@ -4,6 +4,7 @@ import com.example.securitydemo.config.security.principal.SecurityPrincipal;
 import com.example.securitydemo.domain.loginCredential.entity.LoginCredential;
 import com.example.securitydemo.domain.loginCredential.repository.LoginCredentialRepository;
 import com.example.securitydemo.domain.loginCredential.service.LoginCredentialService;
+import com.example.securitydemo.domain.user.repository.UserRepository;
 import com.example.securitydemo.util.cookie.CookieUtil;
 import com.example.securitydemo.util.redis.RedisUtil;
 import com.example.securitydemo.util.token.dto.TokenResponseDto;
@@ -26,16 +27,19 @@ import org.springframework.util.SerializationUtils;
 
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
 import java.util.Date;
 
 @RequiredArgsConstructor
 @Component
 public class TokenUtil {
-
+    private final UserRepository userRepository;
     private final RedisUtil redisUtil;
     private final LoginCredentialRepository loginCredentialRepository;
     private final LoginCredentialService loginCredentialService;
+    public static final String REDIS_ACCESS_TOKEN_PREFIX = "auth:accessToken:";
 
     @Value("${spring.jwt.salt}")
     private String salt;
@@ -71,7 +75,13 @@ public class TokenUtil {
      * @param token 현재 가지고 있는 토큰
      * @return 토큰이 유효한지에 대한 boolean 값
      */
-    public boolean isTokenValid(String token) {
+    public boolean isTokenValid(String token, String email) {
+
+        if (!redisUtil.getData(REDIS_ACCESS_TOKEN_PREFIX+email).equals(token) &&
+                !userRepository.findByEmail(email).get().getRefreshToken().equals(hashToken(token))) {
+            logger.error("Token is blacklisted");
+            return false;
+        }
         try {
             Jwts.parserBuilder()
                     .setSigningKey(getKey())
@@ -126,7 +136,7 @@ public class TokenUtil {
             @NonNull HttpServletResponse response,
             String refreshToken
     ) throws RuntimeException {
-        LoginCredential loginCredential = loginCredentialRepository.findByRefreshToken(refreshToken)
+        LoginCredential loginCredential = loginCredentialRepository.findByRefreshToken(hashToken(refreshToken))
                 .orElseThrow(() -> new RuntimeException("토큰이 유효하지 않습니다."));
 
         // 토큰이 DB에 저장되어 있는것을 확인했으면,
@@ -150,12 +160,12 @@ public class TokenUtil {
         String refreshToken = createToken(email, TokenType.refreshToken);
 
         try {
-            redisUtil.setDataWithExpire("access_token", accessToken, TokenType.accessToken.getExpireTime());
+            redisUtil.setDataWithExpire(REDIS_ACCESS_TOKEN_PREFIX+email, accessToken, TokenType.accessToken.getExpireTime());
 
             LoginCredential loginCredential = loginCredentialRepository.findByEmail(email)
                     .orElseThrow(() -> new IllegalArgumentException("존재 하지 않는 회원입니다."));
 
-            loginCredential.setRefreshToken(refreshToken);
+            loginCredential.setRefreshToken(hashToken(refreshToken));
             loginCredentialRepository.save(loginCredential);
 
         } catch (Exception e) {
@@ -182,6 +192,16 @@ public class TokenUtil {
             SecurityContextHolder.getContext().setAuthentication(authenticationToken);
         } else {
             throw new RuntimeException("인증 과정에서 문제가 발생했습니다.");
+        }
+    }
+
+    public String hashToken(String token) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hashBytes = digest.digest(token.getBytes());
+            return Base64.getEncoder().encodeToString(hashBytes);
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException("해싱 중 에러가 발생했습니다.");
         }
     }
 }

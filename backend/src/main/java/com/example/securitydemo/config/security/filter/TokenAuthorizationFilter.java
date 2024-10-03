@@ -68,13 +68,12 @@ public class TokenAuthorizationFilter extends OncePerRequestFilter {
         String accessToken = CookieUtil.extractToken(request, TokenType.accessToken);
         String refreshToken = CookieUtil.extractToken(request, TokenType.refreshToken);
 
-
         // 1. 토큰이 제대로 추출된 경우
         if (accessToken != null && refreshToken != null) {
             // 1-1. 엑세스 토큰이 유효한 경우
-            if (tokenUtil.isTokenValid(accessToken)) {
+            if (tokenUtil.isTokenValid(accessToken, tokenUtil.getEmailFromToken(accessToken))) {
                 // 1-1-1.엑세스 토큰이 유효한데 리프레시 토큰은 유효하지 않은 경우
-                if (!tokenUtil.isTokenValid(refreshToken)) {
+                if (!tokenUtil.isTokenValid(refreshToken, tokenUtil.getEmailFromToken(refreshToken))) {
                     tokenUtil.deleteTokenOnCookie(response);
                     throw new RuntimeException("리프레시 토큰이 만료되었습니다.");
                 }
@@ -87,7 +86,7 @@ public class TokenAuthorizationFilter extends OncePerRequestFilter {
             // 2. 엑세스 토큰이 유효하지 않은 경우
             else {
                 // 근데 리프레시 토큰은 유효한 경우
-                if (tokenUtil.isTokenValid(refreshToken)) {
+                if (tokenUtil.isTokenValid(refreshToken, tokenUtil.getEmailFromToken(refreshToken))) {
                     // 리프레시 토큰을 통해 리프레시 한 후
                     tokenUtil.tokenRefresh(response, refreshToken);
                     // 리프레시 토큰을 통해 인증 정보를 저장하고, 다음 필터로 이동한다.
