@@ -7,13 +7,11 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.NonNull;
 import org.springframework.http.ResponseCookie;
-import org.springframework.stereotype.Component;
 import org.springframework.util.SerializationUtils;
 
 import java.util.Base64;
 import java.util.Optional;
 
-@Component
 public class CookieUtil {
 
     /**
@@ -22,7 +20,7 @@ public class CookieUtil {
      * @param cookieName 추출하려는 쿠키의 키값
      * @return 추출된 쿠키의 밸류값
      */
-    public Optional<Cookie> getCookie(
+    public static Optional<Cookie> getCookie(
             @NonNull HttpServletRequest request,
             String cookieName
     ) {
@@ -44,7 +42,7 @@ public class CookieUtil {
      * @param tokenType accessToken/refreshToken 중 하나를 받음
      * @return 토큰
      */
-    public String extractToken(
+    public static String extractToken(
             @NonNull HttpServletRequest request,
             TokenType tokenType
     ) {
@@ -64,7 +62,7 @@ public class CookieUtil {
      * @param cookieValue 삽입하려는 쿠키의 밸류값
      * @param maxAge 삽입하려는 쿠키의 유효기간
      */
-    public void addCookie(
+    public static void addCookie(
             HttpServletResponse response,
             String cookieName,
             String cookieValue,
@@ -83,7 +81,7 @@ public class CookieUtil {
      * @param response 서버에 응답이 나갈 때 동작
      * @param cookieName 삭제하려는 쿠키의 키값
      */
-    public void deleteCookie(
+    public static void deleteCookie(
             HttpServletResponse response,
             String cookieName
     ) {
@@ -106,7 +104,7 @@ public class CookieUtil {
      * @param response  서버에 응답이 나갈 때 동작
      * @param tokenResponseDto 엑세스 토큰과 리프레시 토큰
      */
-    public void pushTokenOnCookie(
+    public static void pushTokenOnCookie(
             @NonNull HttpServletResponse response,
             TokenResponseDto tokenResponseDto
     ) {

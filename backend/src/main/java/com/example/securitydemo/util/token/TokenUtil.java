@@ -33,7 +33,6 @@ import java.util.Date;
 @Component
 public class TokenUtil {
 
-    private final CookieUtil cookieUtil;
     private final RedisUtil redisUtil;
     private final LoginCredentialRepository loginCredentialRepository;
     private final LoginCredentialService loginCredentialService;
@@ -112,8 +111,8 @@ public class TokenUtil {
     public void deleteTokenOnCookie(
             @NonNull HttpServletResponse response
     ) {
-        cookieUtil.deleteCookie(response, "refresh_token");
-        cookieUtil.deleteCookie(response, "access_token");
+        CookieUtil.deleteCookie(response, "refresh_token");
+        CookieUtil.deleteCookie(response, "access_token");
     }
 
     /**
@@ -137,7 +136,7 @@ public class TokenUtil {
         TokenResponseDto tokenResponseDto = getToken(email);
 
         // 그리고 다시 response 에 담아 보내기
-        cookieUtil.pushTokenOnCookie(response, tokenResponseDto);
+        CookieUtil.pushTokenOnCookie(response, tokenResponseDto);
     }
 
     /**
