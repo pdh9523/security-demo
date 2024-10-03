@@ -21,8 +21,9 @@ public class WhiteListConfig {
             // 회원가입 관련 엔드포인트
             "/api/user/register",
             // 로그인 관련 엔드포인트
-            "/oauth2/authorization/kakao",
-            "/oauth2/authorization/naver",
+            "/api/oauth2/authorization/kakao",
+            "/api/oauth2/authorization/naver",
+            "/api/login/oauth2/code/kakao",
             // 기본 설정 관련
             "/favicon.ico"
     };
