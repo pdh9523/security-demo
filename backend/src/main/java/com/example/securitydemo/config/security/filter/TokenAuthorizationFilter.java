@@ -1,6 +1,7 @@
 package com.example.securitydemo.config.security.filter;
 
 import com.example.securitydemo.config.security.WhiteListConfig;
+import com.example.securitydemo.util.cookie.CookieUtil;
 import com.example.securitydemo.util.token.TokenType;
 import com.example.securitydemo.util.token.TokenUtil;
 import jakarta.servlet.FilterChain;
@@ -23,6 +24,7 @@ import java.util.Arrays;
 @RequiredArgsConstructor
 public class TokenAuthorizationFilter extends OncePerRequestFilter {
 
+    private final CookieUtil cookieUtil;
     private final TokenUtil tokenUtil;
     private final WhiteListConfig whiteList;
 
@@ -64,8 +66,8 @@ public class TokenAuthorizationFilter extends OncePerRequestFilter {
         // TODO: 토큰이 없을 수 있음. 이거 예외 처리 해야함
 
         // 쿠키에서 토큰 추출
-        String accessToken = tokenUtil.extractToken(request, TokenType.accessToken);
-        String refreshToken = tokenUtil.extractToken(request, TokenType.refreshToken);
+        String accessToken = cookieUtil.extractToken(request, TokenType.accessToken);
+        String refreshToken = cookieUtil.extractToken(request, TokenType.refreshToken);
 
 
         // 1. 토큰이 제대로 추출된 경우
