@@ -24,6 +24,10 @@ export default function App() {
     useEffect(() => {
         myInfo()
     })
+
+    function kakaoLogin() {
+        window.location.href = "http://localhost:8080/api/oauth2/authorization/kakao?redirect_uri=http://localhost:3000&mode=login"
+    }
     return (
         <div>
             <div>
@@ -31,11 +35,24 @@ export default function App() {
             </div>
             <div>
                 랜딩 페이지 입니다.
+            </div>
+            <div>
+                <button>
+                    <a href="/user/login">
+                        로그인
+                    </a>
+                </button>
                 <button
                     onClick={() => logout()}
                 >
                     로그아웃
                 </button>
+            </div>
+            <div>
+                <button
+                    onClick={kakaoLogin}>
+                카카오 로그인
+            </button>
             </div>
         </div>
     )
