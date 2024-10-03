@@ -1,8 +1,6 @@
 package com.example.securitydemo.config.security.handler;
 
 import com.example.securitydemo.config.security.principal.SecurityPrincipal;
-import com.example.securitydemo.domain.user.dto.UserResponseDto;
-import com.example.securitydemo.domain.user.entity.User;
 import com.example.securitydemo.util.cookie.CookieUtil;
 import com.example.securitydemo.util.token.TokenUtil;
 import com.example.securitydemo.util.token.dto.TokenResponseDto;
@@ -24,7 +22,6 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class CustomAuthenticationSuccessHandler extends SavedRequestAwareAuthenticationSuccessHandler {
 
-    private final CookieUtil cookieUtil;
     private final TokenUtil tokenUtil;
     private final ObjectMapper objectMapper;
 
@@ -35,8 +32,10 @@ public class CustomAuthenticationSuccessHandler extends SavedRequestAwareAuthent
             Authentication authentication
     ) throws IOException, ServletException {
         SecurityPrincipal securityPrincipal = (SecurityPrincipal) authentication.getPrincipal();
+
         TokenResponseDto tokenResponseDto = tokenUtil.getToken(securityPrincipal.getEmail());
-        cookieUtil.pushTokenOnCookie(response, tokenResponseDto);
+
+        CookieUtil.pushTokenOnCookie(response, tokenResponseDto);
 
         // 응답 설정
         response.setCharacterEncoding("UTF-8");
