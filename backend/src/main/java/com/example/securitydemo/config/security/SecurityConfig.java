@@ -1,5 +1,9 @@
 package com.example.securitydemo.config.security;
 
+import com.example.securitydemo.config.oauth2.OAuth2Service;
+import com.example.securitydemo.config.oauth2.handler.OAuth2AuthenticationFailureHandler;
+import com.example.securitydemo.config.oauth2.handler.OAuth2AuthenticationSuccessHandler;
+import com.example.securitydemo.config.oauth2.repository.OAuth2Repository;
 import com.example.securitydemo.config.security.filter.CustomAuthenticationFilter;
 import com.example.securitydemo.config.security.filter.TokenAuthorizationFilter;
 import com.example.securitydemo.config.security.handler.CustomAuthenticationFailureHandler;
@@ -34,10 +38,15 @@ import java.util.Collections;
         securedEnabled = true,
         jsr250Enabled = true)
 public class SecurityConfig {
+
+    private final OAuth2AuthenticationFailureHandler oAuth2AuthenticationFailureHandler;
+    private final OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
     private final ObjectMapper objectMapper;
     private final WhiteListConfig whiteList;
     private final TokenAuthorizationFilter tokenAuthorizationFilter;
     private final CustomLogoutSuccessHandler customLogoutSuccessHandler;
+    private final OAuth2Service oAuth2Service;
+
     // 내부에 추가적으로 시큐리티 필터체인을 통과해야하는 요소를 삽입
     @Bean
     public WebSecurityCustomizer webSecurityCustomizer() {
@@ -48,7 +57,8 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain (
             HttpSecurity http,
-            CustomAuthenticationFilter customAuthenticationFilter
+            CustomAuthenticationFilter customAuthenticationFilter,
+            OAuth2Repository oAuth2Repository
     ) throws Exception {
         return http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
@@ -60,6 +70,18 @@ public class SecurityConfig {
                 )
                 .addFilterBefore(tokenAuthorizationFilter, BasicAuthenticationFilter.class)
                 .addFilterBefore(customAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .oauth2Login(configuration -> configuration
+                        .authorizationEndpoint(
+                                config -> config
+                                        .baseUri("/api/oauth2/authorization")
+                                        .authorizationRequestRepository(oAuth2Repository))
+                        .userInfoEndpoint(
+                                config -> config
+                                        .userService(oAuth2Service))
+                        .successHandler(oAuth2AuthenticationSuccessHandler)
+                        .failureHandler(oAuth2AuthenticationFailureHandler)
+                        .loginProcessingUrl("/api/login/oauth2/code/{provider}")
+                )
                 // 로그아웃 시 로직. "/user/logout" 엔드포인트로 들어오는 로직을 로그아웃으로 인지해 인증 제거, 쿠키 제거, 세션 비활성화 등의 처리를 수행한다.
                 .logout(logout -> logout
                         // 로그아웃 페이지에 대한 설정
@@ -107,4 +129,5 @@ public class SecurityConfig {
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }
+
 }
