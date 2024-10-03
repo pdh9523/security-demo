@@ -21,7 +21,7 @@ public class RedisEmailUtil {
     private final JavaMailSender mailSender;
     private static final SecureRandom secureRandom = new SecureRandom();
 
-    private static final String REDIS_EMAIL_PREFIX = "auth: ";
+    private static final String REDIS_EMAIL_PREFIX = "auth:EmailAuthCode: ";
     private static final Long REDIS_EMAIL_DURATION = 60L * 5;       // 60sec * 5min
 
     /**
