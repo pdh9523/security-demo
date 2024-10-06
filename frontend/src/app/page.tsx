@@ -1,7 +1,8 @@
 "use client"
 
-import {api} from "@/lib/api";
+import api from "@/lib/api";
 import {useEffect, useState} from "react";
+import {fetchSessionData} from "@/app/(router)/user/login/page";
 
 
 export default function App() {
@@ -28,6 +29,8 @@ export default function App() {
     function kakaoLogin() {
         window.location.href = "http://localhost:8080/api/oauth2/authorization/kakao?redirect_uri=http://localhost:3000&mode=login"
     }
+
+    fetchSessionData()
     return (
         <div>
             <div>
