@@ -2,6 +2,7 @@ package com.example.securitydemo.config.security.handler;
 
 import com.example.securitydemo.config.security.principal.SecurityPrincipal;
 import com.example.securitydemo.util.cookie.CookieUtil;
+import com.example.securitydemo.util.token.TokenType;
 import com.example.securitydemo.util.token.TokenUtil;
 import com.example.securitydemo.util.token.dto.TokenResponseDto;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -43,8 +44,8 @@ public class CustomAuthenticationSuccessHandler extends SavedRequestAwareAuthent
 
         // JSON 객체를 만들기 위해 Map으로 데이터 구성
         Map<String, Object> responseBody = new HashMap<>();
-        responseBody.put("access_token", tokenResponseDto.accessToken()); // access_token 추가
-        responseBody.put("refresh_token", tokenResponseDto.refreshToken()); // refresh_token 추가
+        responseBody.put(TokenType.accessToken.toString(), tokenResponseDto.accessToken()); // access_token 추가
+        responseBody.put(TokenType.refreshToken.toString(), tokenResponseDto.refreshToken()); // refresh_token 추가
 
         // ObjectMapper로 Map 객체를 JSON 형식으로 변환 후 응답으로 전송
         objectMapper.writerWithDefaultPrettyPrinter().writeValue(response.getOutputStream(), responseBody);

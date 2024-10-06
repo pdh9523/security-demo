@@ -121,8 +121,8 @@ public class TokenUtil {
     public void deleteTokenOnCookie(
             @NonNull HttpServletResponse response
     ) {
-        CookieUtil.deleteCookie(response, "refresh_token");
-        CookieUtil.deleteCookie(response, "access_token");
+        CookieUtil.deleteCookie(response, TokenType.refreshToken.toString());
+        CookieUtil.deleteCookie(response, TokenType.accessToken.toString());
     }
 
     /**

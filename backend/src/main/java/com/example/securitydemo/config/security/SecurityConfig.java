@@ -10,11 +10,13 @@ import com.example.securitydemo.config.security.handler.CustomAuthenticationFail
 import com.example.securitydemo.config.security.handler.CustomAuthenticationSuccessHandler;
 import com.example.securitydemo.config.security.handler.CustomLogoutSuccessHandler;
 import com.example.securitydemo.config.security.provider.CustomAuthenticationProvider;
+import com.example.securitydemo.util.token.TokenType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -65,7 +67,7 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(whiteList.getWhiteList()).permitAll()
-//                        .requestMatchers(HttpMethod.GET, whiteList.getWhiteListForGet()).permitAll()
+                        .requestMatchers(HttpMethod.GET, whiteList.getWhiteListForGet()).permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(tokenAuthorizationFilter, BasicAuthenticationFilter.class)
@@ -89,7 +91,7 @@ public class SecurityConfig {
                         // 로그아웃 하면서 인증 정보를 삭제하고
                         .clearAuthentication(true)
                         // 쿠키를 삭제함
-                        .deleteCookies("access_token", "refresh_token")
+                        .deleteCookies(TokenType.accessToken.toString(), TokenType.refreshToken.toString())
                         // 세션 무효화
                         .invalidateHttpSession(true)
                         .logoutSuccessHandler(customLogoutSuccessHandler)
