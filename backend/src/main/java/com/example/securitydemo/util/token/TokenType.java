@@ -17,8 +17,8 @@ public enum TokenType {
     @Override
     public String toString() {
         return switch (this) {
-            case accessToken -> "access_token";
-            case refreshToken -> "refresh_token";
+            case accessToken -> "accessToken";
+            case refreshToken -> "refreshToken";
         };
     }
 }
