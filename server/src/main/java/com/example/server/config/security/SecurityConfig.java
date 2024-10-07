@@ -75,19 +75,19 @@ public class SecurityConfig {
                 .oauth2Login(configuration -> configuration
                         .authorizationEndpoint(
                                 config -> config
-                                        .baseUri("/api/oauth2/authorization")
+                                        .baseUri("/api/v2/oauth2/authorization")
                                         .authorizationRequestRepository(oAuth2Repository))
                         .userInfoEndpoint(
                                 config -> config
                                         .userService(oAuth2Service))
                         .successHandler(oAuth2AuthenticationSuccessHandler)
                         .failureHandler(oAuth2AuthenticationFailureHandler)
-                        .loginProcessingUrl("/api/login/oauth2/code/{provider}")
+                        .loginProcessingUrl("/api/v2/login/oauth2/code/{provider}")
                 )
                 // 로그아웃 시 로직. "/user/logout" 엔드포인트로 들어오는 로직을 로그아웃으로 인지해 인증 제거, 쿠키 제거, 세션 비활성화 등의 처리를 수행한다.
                 .logout(logout -> logout
                         // 로그아웃 페이지에 대한 설정
-                        .logoutUrl("/api/user/logout")
+                        .logoutUrl("/api/v2/user/logout")
                         // 로그아웃 하면서 인증 정보를 삭제하고
                         .clearAuthentication(true)
                         // 쿠키를 삭제함
@@ -107,7 +107,7 @@ public class SecurityConfig {
     ) {
         CustomAuthenticationFilter customAuthenticationFilter = new CustomAuthenticationFilter(authenticationManager, objectMapper);
         // "/user/login" 엔드포인트로 들어오는 요청을 로그인으로 인지해 CustomAuthenticationFilter에서 처리하도록 지정한다.
-        customAuthenticationFilter.setFilterProcessesUrl("/api/user/login");
+        customAuthenticationFilter.setFilterProcessesUrl("/api/v2/user/login");
         customAuthenticationFilter.setAuthenticationSuccessHandler(customAuthenticationSuccessHandler);    // '인증' 성공 시 해당 핸들러로 처리를 전가한다.
         customAuthenticationFilter.setAuthenticationFailureHandler(customAuthenticationFailureHandler);    // '인증' 실패 시 해당 핸들러로 처리를 전가한다.
         customAuthenticationFilter.afterPropertiesSet();
