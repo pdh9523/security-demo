@@ -5,8 +5,10 @@ import com.example.server.config.oauth2.repository.OAuth2Repository;
 import com.example.server.domain.user.entity.User;
 import com.example.server.domain.user.repository.UserRepository;
 import com.example.server.util.cookie.CookieUtil;
+import com.example.server.util.token.TokenType;
 import com.example.server.util.token.TokenUtil;
 import com.example.server.util.token.dto.TokenResponseDto;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -19,6 +21,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 import static com.example.server.config.oauth2.repository.OAuth2Repository.MODE_PARAM_COOKIE_NAME;
@@ -33,6 +37,8 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     private final PasswordEncoder passwordEncoder;
     private final OAuth2Repository oAuth2Repository;
     private final UserRepository userRepository;
+    private final ObjectMapper objectMapper;
+
 
     @Override
     public void onAuthenticationSuccess(
@@ -85,6 +91,8 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
             CookieUtil.pushTokenOnCookie(response, tokenResponseDto);
 
             return UriComponentsBuilder.fromUriString(redirectURI)
+                    .queryParam(TokenType.accessToken.toString(), tokenResponseDto.accessToken())
+                    .queryParam(TokenType.refreshToken.toString(), tokenResponseDto.refreshToken())
                     .build().toUriString();
         }
 

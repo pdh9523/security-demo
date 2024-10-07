@@ -41,7 +41,6 @@ public class TokenAuthorizationFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
             return;
         }
-        
     
         if (Arrays.stream(whiteList.getWhiteListForSwagger())
                 .anyMatch(whiteList -> new AntPathRequestMatcher(whiteList).matches(request))) {
@@ -59,48 +58,29 @@ public class TokenAuthorizationFilter extends OncePerRequestFilter {
             }
         }
 
-
         if (request.getMethod().equalsIgnoreCase("OPTION")) {
             response.setStatus(HttpServletResponse.SC_OK);
             filterChain.doFilter(request, response);
             return;
         }
-        // TODO: 토큰이 없을 수 있음. 이거 예외 처리 해야함
 
-        // 쿠키에서 토큰 추출
-        String accessToken = CookieUtil.extractToken(request, TokenType.accessToken);
-        String refreshToken = CookieUtil.extractToken(request, TokenType.refreshToken);
+        // 토큰 처리 방식 변경
+        // accessToken 을 헤더에서 가져온 후,
+        // 토큰이 유효한 경우 필터를 통과
+        // 토큰이 유효하지 않은 경우 리프레시 해야한다는 응답을 반환
+        String authorizationHeader = request.getHeader("Authorization");
+        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
+            throw new RuntimeException("인증 정보가 없습니다.");
+        }
 
-        // 1. 토큰이 제대로 추출된 경우
-        if (accessToken != null && refreshToken != null) {
-            // 1-1. 엑세스 토큰이 유효한 경우
-            if (tokenUtil.isTokenValid(accessToken, tokenUtil.getEmailFromToken(accessToken))) {
-                // 토큰을 통해 인증정보를 저장하고, 다음 필터로 이동
-                tokenUtil.authenticateWithToken(accessToken);
-                filterChain.doFilter(request, response);
-            }
-
-            // 1-2. 엑세스 토큰이 유효하지 않은 경우
-            else {
-                // 1-2-1.근데 리프레시 토큰은 유효한 경우
-                if (tokenUtil.isTokenValid(refreshToken, tokenUtil.getEmailFromToken(refreshToken))) {
-                    // 리프레시 토큰을 통해 리프레시 한 후
-                    tokenUtil.tokenRefresh(response, refreshToken);
-                    // 리프레시 토큰을 통해 인증 정보를 저장하고, 다음 필터로 이동한다.
-                    tokenUtil.authenticateWithToken(refreshToken);
-                    filterChain.doFilter(request, response);
-                }
-                // 1-2-2. 리프레시 토큰도 유효하지 않은 경우
-                else {
-                    // 토큰을 삭제
-                    tokenUtil.deleteTokenOnCookie(response);
-                    throw new RuntimeException("토큰이 유효하지 않습니다.");
-                }
-            }
-            // 토큰이 제대로 추출되지 않은 경우
+        String accessToken = authorizationHeader.substring(7); // 'Bearer ' 이후의 토큰 값만 추출
+        String email = tokenUtil.getEmailFromToken(accessToken);
+        // 토큰 검증 로직
+        if (tokenUtil.isTokenValid(accessToken, email)) {
+            tokenUtil.authenticateWithToken(accessToken);
+            filterChain.doFilter(request, response);
         } else {
-            tokenUtil.deleteTokenOnCookie(response);
-            throw new RuntimeException("토큰이 정상적으로 추출되지 않았습니다.");
+            throw new RuntimeException("토큰이 유효하지 않습니다.");
         }
     }
 }
