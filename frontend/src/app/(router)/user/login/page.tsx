@@ -27,11 +27,6 @@ export function handleValueChange(
     setFunction(event.target.value);
 }
 
-function goSocialLogin(provider: string) {
-    // NextAuth의 signIn 함수를 사용하여 소셜 로그인 처리
-    signIn(provider);
-}
-
 export async function fetchSessionData() {
     const session = await getSession();
 
@@ -65,9 +60,10 @@ export default function App() {
         }
     }
 
-    const response = getSession();
-    console.log(response)
-    fetchSessionData()
+    function goSocial() {
+        window.location.href = `${process.env.NEXT_PUBLIC_SERVER_URL}/oauth2/authorization/kakao?redirect_uri=${process.env.NEXT_PUBLIC_SOCIAL_REDIRECT_URL}&mode=login`;
+    }
+
     return (
         <Container component="main" maxWidth="xs">
             <Box
@@ -145,7 +141,7 @@ export default function App() {
                         또는
                     </Divider>
                     <Grid container spacing={1} mt={2}>
-                        <Grid item xs={6}>
+                        <Grid item xs={12}>
                             <Box
                                 sx={{
                                     width: "100%",
@@ -153,25 +149,7 @@ export default function App() {
                                     cursor: "pointer",
                                     position: "relative",
                                 }}
-                                onClick={() => goSocialLogin("naver")}
-                            >
-                                <Image
-                                    src="/naverBtn.png"
-                                    alt="naverLogin"
-                                    layout="fill" // 부모의 크기에 맞게 조절
-                                    objectFit="contain"
-                                />
-                            </Box>
-                        </Grid>
-                        <Grid item xs={6}>
-                            <Box
-                                sx={{
-                                    width: "100%",
-                                    height: "56px",
-                                    cursor: "pointer",
-                                    position: "relative",
-                                }}
-                                onClick={() => goSocialLogin("kakao")}
+                                onClick={() => goSocial()}
                             >
                                 <Image
                                     src="/kakao_login_medium_narrow.png"
