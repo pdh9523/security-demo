@@ -36,8 +36,6 @@ public class CustomAuthenticationSuccessHandler extends SavedRequestAwareAuthent
 
         TokenResponseDto tokenResponseDto = tokenUtil.getToken(securityPrincipal.getEmail());
 
-        CookieUtil.pushTokenOnCookie(response, tokenResponseDto);
-
         // 응답 설정
         response.setCharacterEncoding("UTF-8");
         response.setContentType("application/json");

@@ -83,12 +83,11 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
                                     passwordEncoder
                             )));
             System.out.println(principal.getEmail());
+            // TODO: 이제 더이상 쿠키에 토큰을 저장할 필요는 없음
             TokenResponseDto tokenResponseDto = tokenUtil.getToken(principal.getEmail());
 
             user.setRefreshToken(tokenUtil.hashToken(tokenResponseDto.refreshToken()));
             userRepository.save(user);
-
-            CookieUtil.pushTokenOnCookie(response, tokenResponseDto);
 
             return UriComponentsBuilder.fromUriString(redirectURI)
                     .queryParam(TokenType.accessToken.toString(), tokenResponseDto.accessToken())
