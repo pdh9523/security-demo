@@ -14,6 +14,10 @@ public class RedisUtil {
     public static long REDIS_EMAIL_EXPIRE = 60 * 5;          // 60sec * 5min
     public static long REDIS_VIEW_EXPIRE = 60 * 60 * 24;     // 60sec * 60min * 24hour
 
+    public static final String REDIS_EMAIL_PREFIX = "auth:EmailAuthCode: ";
+    public static final String REDIS_ACCESS_TOKEN_PREFIX = "auth:accessToken:";
+
+
     public String getData(String key) {
         return redisTemplate.opsForValue().get(key);
     }

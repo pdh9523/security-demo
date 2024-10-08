@@ -32,6 +32,8 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
 import java.util.Date;
 
+import static com.example.server.util.redis.RedisUtil.REDIS_ACCESS_TOKEN_PREFIX;
+
 @RequiredArgsConstructor
 @Component
 public class TokenUtil {
@@ -39,7 +41,6 @@ public class TokenUtil {
     private final RedisUtil redisUtil;
     private final LoginCredentialRepository loginCredentialRepository;
     private final LoginCredentialService loginCredentialService;
-    public static final String REDIS_ACCESS_TOKEN_PREFIX = "auth:accessToken:";
 
     @Value("${spring.jwt.salt}")
     private String salt;
