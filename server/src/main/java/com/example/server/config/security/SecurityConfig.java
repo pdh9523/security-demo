@@ -8,6 +8,7 @@ import com.example.server.config.security.filter.CustomAuthenticationFilter;
 import com.example.server.config.security.filter.TokenAuthorizationFilter;
 import com.example.server.config.security.handler.CustomAuthenticationFailureHandler;
 import com.example.server.config.security.handler.CustomAuthenticationSuccessHandler;
+import com.example.server.config.security.handler.CustomLogoutHandler;
 import com.example.server.config.security.handler.CustomLogoutSuccessHandler;
 import com.example.server.config.security.provider.CustomAuthenticationProvider;
 import com.example.server.util.token.TokenType;
@@ -41,6 +42,7 @@ import java.util.Collections;
         jsr250Enabled = true)
 public class SecurityConfig {
 
+    private final CustomLogoutHandler customLogoutHandler;
     private final OAuth2AuthenticationFailureHandler oAuth2AuthenticationFailureHandler;
     private final OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
     private final ObjectMapper objectMapper;
@@ -85,7 +87,10 @@ public class SecurityConfig {
                         .loginProcessingUrl("/api/v2/login/oauth2/code/{provider}")
                 )
                 // 로그아웃 시 로직. "/user/logout" 엔드포인트로 들어오는 로직을 로그아웃으로 인지해 인증 제거, 쿠키 제거, 세션 비활성화 등의 처리를 수행한다.
+                // 레디스 삭제를 위해 logouthandler 설정
+                // TODO: 로그아웃 시 프론트 세션에도 제거가 필요 (next-auth logout 로직 어떻게 하는지 살펴보기)
                 .logout(logout -> logout
+                        .addLogoutHandler(customLogoutHandler)
                         // 로그아웃 페이지에 대한 설정
                         .logoutUrl("/api/v2/user/logout")
                         // 로그아웃 하면서 인증 정보를 삭제하고
