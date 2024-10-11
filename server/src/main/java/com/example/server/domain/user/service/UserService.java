@@ -4,6 +4,8 @@ import com.example.server.domain.user.dto.UserRequestDto;
 import com.example.server.domain.user.dto.UserResponseDto;
 import com.example.server.domain.user.entity.User;
 import com.example.server.util.redis.email.dto.EmailAuthCheckDto;
+import com.example.server.util.token.dto.RefreshTokenRequestDto;
+import com.example.server.util.token.dto.TokenResponseDto;
 import jakarta.mail.MessagingException;
 
 public interface UserService {
@@ -35,4 +37,6 @@ public interface UserService {
      * @return 인증이 성공되었는지에 대한 여부
      */
     Boolean verifyEmail(EmailAuthCheckDto emailAuthCheckDto);
+
+    TokenResponseDto tokenRefresh(RefreshTokenRequestDto refreshTokenRequestDto);
 }

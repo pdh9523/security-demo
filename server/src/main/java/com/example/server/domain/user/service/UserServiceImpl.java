@@ -6,6 +6,9 @@ import com.example.server.domain.user.entity.User;
 import com.example.server.domain.user.repository.UserRepository;
 import com.example.server.util.redis.email.RedisEmailUtil;
 import com.example.server.util.redis.email.dto.EmailAuthCheckDto;
+import com.example.server.util.token.TokenUtil;
+import com.example.server.util.token.dto.RefreshTokenRequestDto;
+import com.example.server.util.token.dto.TokenResponseDto;
 import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -15,6 +18,7 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
 
+    private final TokenUtil tokenUtil;
     private final RedisEmailUtil redisEmailUtil;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -46,5 +50,10 @@ public class UserServiceImpl implements UserService {
     @Override
     public Boolean verifyEmail(EmailAuthCheckDto emailAuthCheckDto) {
         return redisEmailUtil.checkAuthCode(emailAuthCheckDto);
+    }
+
+    @Override
+    public TokenResponseDto tokenRefresh(RefreshTokenRequestDto refreshTokenRequestDto) {
+        return tokenUtil.tokenRefresh(refreshTokenRequestDto);
     }
 }

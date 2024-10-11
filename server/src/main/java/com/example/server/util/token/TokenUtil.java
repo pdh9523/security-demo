@@ -4,26 +4,20 @@ import com.example.server.config.security.principal.SecurityPrincipal;
 import com.example.server.domain.loginCredential.entity.LoginCredential;
 import com.example.server.domain.loginCredential.repository.LoginCredentialRepository;
 import com.example.server.domain.loginCredential.service.LoginCredentialService;
-import com.example.server.domain.user.repository.UserRepository;
-import com.example.server.util.cookie.CookieUtil;
 import com.example.server.util.redis.RedisUtil;
+import com.example.server.util.token.dto.AccessTokenRequestDto;
+import com.example.server.util.token.dto.RefreshTokenRequestDto;
 import com.example.server.util.token.dto.TokenResponseDto;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import jakarta.transaction.Transactional;
-import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.ResponseCookie;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
-import org.springframework.util.SerializationUtils;
 
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
@@ -37,7 +31,6 @@ import static com.example.server.util.redis.RedisUtil.REDIS_ACCESS_TOKEN_PREFIX;
 @RequiredArgsConstructor
 @Component
 public class TokenUtil {
-    private final UserRepository userRepository;
     private final RedisUtil redisUtil;
     private final LoginCredentialRepository loginCredentialRepository;
     private final LoginCredentialService loginCredentialService;
@@ -72,37 +65,39 @@ public class TokenUtil {
     }
 
     /**
+     * <p>엑세스 토큰용</p>
      * 토큰을 복호화 해서 유효한지 확인
-     * @param token 현재 가지고 있는 토큰
+     * @param accessTokenRequestDto 엑세스 토큰과 이메일(아이디)
      * @return 토큰이 유효한지에 대한 boolean 값
      */
-    public boolean isTokenValid(String token, String email) {
-
-        if (!redisUtil.getData(REDIS_ACCESS_TOKEN_PREFIX+email).equals(token) &&
-                !userRepository.findByEmail(email).get().getRefreshToken().equals(hashToken(token))) {
-            logger.error("Token is blacklisted");
+    public boolean isTokenValid(AccessTokenRequestDto accessTokenRequestDto) {
+        String accessToken = accessTokenRequestDto.accessToken();
+        String email = accessTokenRequestDto.email();
+        if (!redisUtil.getData(REDIS_ACCESS_TOKEN_PREFIX+email).equals(accessToken)) {
+            logger.error("토큰이 만료되었거나, 유효하지 않은 토큰");
             return false;
         }
-        try {
-            Jwts.parserBuilder()
-                    .setSigningKey(getKey())
-                    .build()
-                    .parseClaimsJws(token);
-            return true;
-        } catch (MalformedJwtException e) {
-            logger.error("Invalid JWT token", e);
-        } catch (ExpiredJwtException e) {
-            logger.error("Expired JWT token", e);
-        } catch (UnsupportedJwtException e) {
-            logger.error("Unsupported JWT token", e);
-        } catch (IllegalArgumentException e) {
-            logger.error("JWT claims string is empty", e);
-        }
-        return false;
+        return parseToken(accessToken);
     }
 
     /**
-     * 유효한 토큰에서 사용자 이름을 추출
+     * <p>리프레시 토큰용</p>
+     * 토큰을 복호화 해서 유효한지 확인
+     * @param refreshTokenRequestDto 리프레시 토큰과 이메일(아이디)
+     * @return 토큰이 유효한지에 대한 boolean 값
+     */
+    public boolean isTokenValid(RefreshTokenRequestDto refreshTokenRequestDto) {
+        String refreshToken = refreshTokenRequestDto.refreshToken();
+        String email = refreshTokenRequestDto.email();
+        if (loginCredentialRepository.existsByRefreshTokenAndEmail(refreshToken, email)) {
+            logger.error("유효하지 않은 토큰");
+            return false;
+        }
+        return parseToken(refreshToken);
+    }
+
+    /**
+     * 토큰에서 사용자 이름을 추출
      * @param token 현재 가지고 있는 토큰
      * @return 토큰에 저장된 email 값
      */
@@ -116,38 +111,18 @@ public class TokenUtil {
     }
 
     /**
-     * 쿠키에서 토큰을 삭제
-     * @param response 서버에 응답이 나갈 때 동작
-     */
-    public void deleteTokenOnCookie(
-            @NonNull HttpServletResponse response
-    ) {
-        CookieUtil.deleteCookie(response, TokenType.refreshToken.toString());
-        CookieUtil.deleteCookie(response, TokenType.accessToken.toString());
-    }
-
-    /**
      * 토큰 리프레시
-     * @param response  서버에 응답이 나갈 때 동작
-     * @param refreshToken  리프레시 토큰
-     * @throws RuntimeException 리프레시 토큰을 통해 유저를 찾지 못하는 경우
+     * @param refreshTokenRequestDto  리프레시 토큰
+     * @throws RuntimeException 리프레시토큰도 만료되었거나, 리프레시 토큰을 통해 유저를 찾지 못하는 경우
      */
     @Transactional
-    public void tokenRefresh(
-            @NonNull HttpServletResponse response,
-            String refreshToken
+    public TokenResponseDto tokenRefresh(
+            RefreshTokenRequestDto refreshTokenRequestDto
     ) throws RuntimeException {
-        LoginCredential loginCredential = loginCredentialRepository.findByRefreshToken(hashToken(refreshToken))
-                .orElseThrow(() -> new RuntimeException("토큰이 유효하지 않습니다."));
-
-        // 토큰이 DB에 저장되어 있는것을 확인했으면,
-
-        // 새로운 토큰을 발급
-        String email = loginCredential.getEmail();
-        TokenResponseDto tokenResponseDto = getToken(email);
-
-        // 그리고 다시 response 에 담아 보내기
-        CookieUtil.pushTokenOnCookie(response, tokenResponseDto);
+        if (!isTokenValid(refreshTokenRequestDto)) {
+            throw new RuntimeException("토큰이 유효하지 않습니다.");
+        }
+        return getToken(refreshTokenRequestDto.email());
     }
 
     /**
@@ -204,6 +179,26 @@ public class TokenUtil {
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException("해싱 중 에러가 발생했습니다.");
         }
+    }
+
+
+    private boolean parseToken(String token) {
+        try {
+            Jwts.parserBuilder()
+                    .setSigningKey(getKey())
+                    .build()
+                    .parseClaimsJws(token);
+            return true;
+        } catch (MalformedJwtException e) {
+            logger.error("Invalid JWT token", e);
+        } catch (ExpiredJwtException e) {
+            logger.error("Expired JWT token", e);
+        } catch (UnsupportedJwtException e) {
+            logger.error("Unsupported JWT token", e);
+        } catch (IllegalArgumentException e) {
+            logger.error("JWT claims string is empty", e);
+        }
+        return false;
     }
 }
 
