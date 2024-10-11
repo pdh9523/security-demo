@@ -17,7 +17,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -69,7 +68,6 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(whiteList.getWhiteList()).permitAll()
-                        .requestMatchers(HttpMethod.GET, whiteList.getWhiteListForGet()).permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(tokenAuthorizationFilter, BasicAuthenticationFilter.class)
@@ -87,7 +85,7 @@ public class SecurityConfig {
                         .loginProcessingUrl("/api/v2/login/oauth2/code/{provider}")
                 )
                 // 로그아웃 시 로직. "/user/logout" 엔드포인트로 들어오는 로직을 로그아웃으로 인지해 인증 제거, 쿠키 제거, 세션 비활성화 등의 처리를 수행한다.
-                // 레디스 삭제를 위해 logouthandler 설정
+                // 레디스 삭제를 위해 logoutHandler 설정
                 // TODO: 로그아웃 시 프론트 세션에도 제거가 필요 (next-auth logout 로직 어떻게 하는지 살펴보기)
                 .logout(logout -> logout
                         .addLogoutHandler(customLogoutHandler)

@@ -1,9 +1,8 @@
 package com.example.server.config.security.filter;
 
 import com.example.server.config.security.WhiteListConfig;
-import com.example.server.util.cookie.CookieUtil;
-import com.example.server.util.token.TokenType;
 import com.example.server.util.token.TokenUtil;
+import com.example.server.util.token.dto.AccessTokenRequestDto;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -42,21 +41,21 @@ public class TokenAuthorizationFilter extends OncePerRequestFilter {
             return;
         }
     
-        if (Arrays.stream(whiteList.getWhiteListForSwagger())
-                .anyMatch(whiteList -> new AntPathRequestMatcher(whiteList).matches(request))) {
-            log.info("JWT FILTER PASS BY WHITELIST");
-            filterChain.doFilter(request, response);
-            return;
-        }
-        
-        if (request.getMethod().equalsIgnoreCase("GET")) {
-            if (Arrays.stream(whiteList.getWhiteListForGet())
-                    .anyMatch(whiteList -> new AntPathRequestMatcher(whiteList).matches(request))) {
-                log.info("JWT FILTER PASS BY WHITELIST");
-                filterChain.doFilter(request, response);
-                return;
-            }
-        }
+//        if (Arrays.stream(whiteList.getWhiteListForSwagger())
+//                .anyMatch(whiteList -> new AntPathRequestMatcher(whiteList).matches(request))) {
+//            log.info("JWT FILTER PASS BY WHITELIST");
+//            filterChain.doFilter(request, response);
+//            return;
+//        }
+//
+//        if (request.getMethod().equalsIgnoreCase("GET")) {
+//            if (Arrays.stream(whiteList.getWhiteListForGet())
+//                    .anyMatch(whiteList -> new AntPathRequestMatcher(whiteList).matches(request))) {
+//                log.info("JWT FILTER PASS BY WHITELIST");
+//                filterChain.doFilter(request, response);
+//                return;
+//            }
+//        }
 
         if (request.getMethod().equalsIgnoreCase("OPTION")) {
             response.setStatus(HttpServletResponse.SC_OK);
@@ -76,7 +75,7 @@ public class TokenAuthorizationFilter extends OncePerRequestFilter {
         String accessToken = authorizationHeader.substring(7); // 'Bearer ' 이후의 토큰 값만 추출
         String email = tokenUtil.getEmailFromToken(accessToken);
         // 토큰 검증 로직
-        if (tokenUtil.isTokenValid(accessToken, email)) {
+        if (tokenUtil.isTokenValid(new AccessTokenRequestDto(accessToken, email))) {
             tokenUtil.authenticateWithToken(accessToken);
             filterChain.doFilter(request, response);
         } else {
