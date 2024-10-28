@@ -58,3 +58,12 @@ dependencies {
 tasks.named('test') {
     useJUnitPlatform()
 }
+
+// 빌드 전 application.yml 삽입
+task copyYML(type: Copy) {
+    copy {
+        from './submodule'
+        include "*.yml"
+        into 'src/main/resources'
+    }
+}
