@@ -1,0 +1,3 @@
+[submodule "server/submodule"]
+	path = server/submodule
+	url = https://github.com/pdh9523/credentials_for_security_demo.git
