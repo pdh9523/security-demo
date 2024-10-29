@@ -52,15 +52,15 @@ pipeline {
                                 dir('./server') {
                                     echo "Delivery BE Image.."  // 백엔드 도커 이미지를 준비합니다.
                                     withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
-                                        sh "echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin"
+                                        sh "echo ${DOCKER_PASSWORD} | docker login -u ${DOCKER_USERNAME} --password-stdin"
                                         // Docker Hub에 로그인합니다.
-                                        sh "docker build -t $DOCKER_USERNAME/security_demo_server:${env.BUILD_ID} ."
+                                        sh "docker build -t ${DOCKER_USERNAME}/security_demo_server:${env.BUILD_ID} ."
                                         // 백엔드 도커 이미지를 빌드합니다.
-                                        sh "docker tag $DOCKER_USERNAME/security_demo_server:${env.BUILD_ID} $DOCKER_USERNAME/security_demo_server:latest"
+                                        sh "docker tag ${DOCKER_USERNAME}/security_demo_server:${env.BUILD_ID} ${DOCKER_USERNAME}/security_demo_server:latest"
                                         // 최신 태그로 이미지 태그를 설정합니다.
-                                        sh "docker push $DOCKER_USERNAME/security_demo_server:${env.BUILD_ID}"  
+                                        sh "docker push ${DOCKER_USERNAME}/security_demo_server:${env.BUILD_ID}"  
                                         // 버전이 있는 이미지를 푸시합니다.
-                                        sh "docker push $DOCKER_USERNAME/security_demo_server:latest"  
+                                        sh "docker push ${DOCKER_USERNAME}/security_demo_server:latest"  
                                         // 최신 이미지를 푸시합니다.
                                     }
                                 }
@@ -89,15 +89,15 @@ pipeline {
                                 dir('./frontend') {
                                     echo "Delivery FE Image.."  // 프론트엔드 도커 이미지를 준비합니다.
                                     withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
-                                        sh "echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin"  
+                                        sh "echo ${DOCKER_PASSWORD} | docker login -u ${DOCKER_USERNAME} --password-stdin"  
                                         // Docker Hub에 로그인합니다.
-                                        sh "docker build -t $DOCKER_USERNAME/security_demo_frontend:${env.BUILD_ID} ."  
+                                        sh "docker build -t ${DOCKER_USERNAME}/security_demo_frontend:${env.BUILD_ID} ."  
                                         // 프론트엔드 도커 이미지를 빌드합니다.
-                                        sh "docker tag $DOCKER_USERNAME/security_demo_frontend:${env.BUILD_ID} $DOCKER_USERNAME/security_demo_frontend:latest"  
+                                        sh "docker tag ${DOCKER_USERNAME}/security_demo_frontend:${env.BUILD_ID} ${DOCKER_USERNAME}/security_demo_frontend:latest"  
                                         // 최신 태그로 이미지 태그를 설정합니다.
-                                        sh "docker push $DOCKER_USERNAME/security_demo_frontend:${env.BUILD_ID}"  
+                                        sh "docker push ${DOCKER_USERNAME}/security_demo_frontend:${env.BUILD_ID}"  
                                         // 버전이 있는 이미지를 푸시합니다.
-                                        sh "docker push $DOCKER_USERNAME/security_demo_frontend:latest"  
+                                        sh "docker push ${DOCKER_USERNAME}/security_demo_frontend:latest"  
                                         // 최신 이미지를 푸시합니다.
                                     }
                                 }
@@ -114,9 +114,9 @@ pipeline {
                     sshagent(credentials: ['ubuntu']) { 
                         sh "ssh -o StrictHostKeyChecking=no ubuntu@$AWS_IP 'cd security-demo && sudo docker-compose --profile prod down'"
                         // 기존 프로세스를 종료합니다.
-                        sh "ssh -o StrictHostKeyChecking=no ubuntu@$AWS_IP 'frontend_images=\$(sudo docker images -q $DOCKER_USERNAME/security_demo_frontend:latest) && if [ -n \"\$frontend_images\" ]; then sudo docker rmi -f \$frontend_images; fi'"
+                        sh "ssh -o StrictHostKeyChecking=no ubuntu@$AWS_IP 'frontend_images=\$(sudo docker images -q ${DOCKER_USERNAME}/security_demo_frontend:latest) && if [ -n \"\$frontend_images\" ]; then sudo docker rmi -f \$frontend_images; fi'"
                         // 기존 프론트엔드 이미지를 삭제합니다.
-                        sh "ssh -o StrictHostKeyChecking=no ubuntu@$AWS_IP 'backend_images=\$(sudo docker images -q $DOCKER_USERNAME/security_demo_server:latest) && if [ -n \"\$backend_images\" ]; then sudo docker rmi -f \$backend_images; fi'"
+                        sh "ssh -o StrictHostKeyChecking=no ubuntu@$AWS_IP 'backend_images=\$(sudo docker images -q ${DOCKER_USERNAME}/security_demo_server:latest) && if [ -n \"\$backend_images\" ]; then sudo docker rmi -f \$backend_images; fi'"
                         // 기존 백엔드 이미지를 삭제합니다.
                         sh "ssh -o StrictHostKeyChecking=no ubuntu@$AWS_IP 'sudo docker image prune -f'"
                         // 사용되지 않는 이미지를 정리합니다.
