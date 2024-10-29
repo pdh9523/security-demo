@@ -2,7 +2,7 @@ import NextAuth, { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { api } from "@/lib/api";
 import { AxiosResponse } from "axios";
-import {NextApiRequest, NextApiResponse} from "next";
+import { NextRequest, NextResponse } from "next/server";
 
 // LoginResponse 타입 정의
 interface LoginResponse {
@@ -18,6 +18,7 @@ declare module "next-auth" {
     }
 
     interface User {
+        id?: string;  // id를 선택 속성으로 설정
         accessToken: string;
         refreshToken: string;
     }
@@ -49,9 +50,8 @@ const options: NextAuthOptions = {
 
                     if (response.status === 200) {
                         const { accessToken, refreshToken } = response.data;
-                        console.log(response.data);
-                        // 로그인 성공 시 accessToken과 refreshToken을 반환
                         return {
+                            id: credentials.email,
                             email: credentials.email,
                             accessToken,
                             refreshToken,
@@ -71,29 +71,29 @@ const options: NextAuthOptions = {
             credentials: {
                 accessToken: { label: 'Access Token', type: 'text' },
                 refreshToken: { label: 'Refresh Token', type: 'text' },
-        },
+            },
             async authorize(credentials) {
                 const accessToken = credentials?.accessToken;
                 const refreshToken = credentials?.refreshToken;
                 if (accessToken && refreshToken) {
-                    return { accessToken, refreshToken };
+                    return {
+                        id: "kakao",
+                        accessToken,
+                        refreshToken,
+                    };
                 }
                 throw new Error("Invalid credentials");
             }
-            }
-        ),
+        }),
     ],
-      session: {
+    session: {
         strategy: "jwt",
     },
     callbacks: {
         async redirect({ url, baseUrl }) {
-            // 중복 인코딩을 방지하고 기본 URL로 리디렉션
             return baseUrl;
         },
-
         async jwt({ token, user }) {
-            // user가 있을 때만 accessToken과 refreshToken을 추가
             if (user) {
                 token.accessToken = user.accessToken;
                 token.refreshToken = user.refreshToken;
@@ -101,7 +101,6 @@ const options: NextAuthOptions = {
             return token;
         },
         async session({ session, token }) {
-            // token에서 accessToken과 refreshToken을 가져와서 session에 추가
             if (token.accessToken && token.refreshToken) {
                 session.accessToken = token.accessToken as string;
                 session.refreshToken = token.refreshToken as string;
@@ -114,27 +113,11 @@ const options: NextAuthOptions = {
     },
 };
 
-const handler = (req: NextApiRequest, res: NextApiResponse) => {
-    if (req.method === "GET" && req.url?.includes("/api/auth/callback/kakao")) {
-        // /done으로 GET 요청 시 처리
-        // accessToken과 refreshToken을 받아서 NextAuth에 저장
-        const { accessToken, refreshToken } = req.query;
+// GET 및 POST 핸들러
+export async function GET(req: NextRequest) {
+    return NextAuth(req as any, NextResponse.next() as any, options); // 타입 단언 제거
+}
 
-        if (accessToken && refreshToken) {
-            return NextAuth(req, res, {
-                ...options,
-                callbacks: {
-                    ...options.callbacks,
-                    async jwt({ token }) {
-                        token.accessToken = accessToken;
-                        token.refreshToken = refreshToken;
-                        return token;
-                    },
-                },
-            });
-        }
-    }
-    return NextAuth(req, res, options);
-};
-
-export { handler as GET, handler as POST };
+export async function POST(req: NextRequest) {
+    return NextAuth(req as any, NextResponse.next() as any, options); // 타입 단언 제거
+}

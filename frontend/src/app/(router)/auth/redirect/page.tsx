@@ -1,17 +1,21 @@
 "use client";
 
-import {useRouter, useSearchParams} from "next/navigation";
-import {useEffect} from "react";
-import {signIn} from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+import { signIn } from "next-auth/react";
 
 export default function App() {
     const router = useRouter();
-    const searchParams = useSearchParams();
 
     useEffect(() => {
-        const accessToken = searchParams.get("accessToken")
-        const refreshToken = searchParams.get("refreshToken")
-        if(accessToken && refreshToken) {
+        // 현재 URL에서 쿼리 매개변수 가져오기
+        const queryString = window.location.search; // 쿼리 문자열
+        const urlParams = new URLSearchParams(queryString); // URLSearchParams 객체 생성
+
+        const accessToken = urlParams.get("accessToken");
+        const refreshToken = urlParams.get("refreshToken");
+
+        if (accessToken && refreshToken) {
             signIn("kakao", {
                 redirect: false,
                 accessToken,
@@ -19,7 +23,7 @@ export default function App() {
             })
                 .then(() => router.push("/"));
         }
-    }, [router])
+    }, [router]);
 
     return <div>Redirecting...</div>;
 }

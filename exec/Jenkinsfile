@@ -1,0 +1,139 @@
+pipeline {
+    agent any
+
+    options {
+        skipDefaultCheckout(true)  // 기본 체크아웃을 건너뜁니다.
+    }
+
+    tools { 
+        nodejs "22.6.0"  // Node.js 22.6.0을 사용합니다.
+    }
+
+    environment {
+        AWS_IP = credentials('AWS_IP')  // AWS 서버의 IP 주소를 환경 변수로 설정합니다.
+    }
+
+    triggers {
+        pollSCM('H 9,12,17 * * *')  // 매일 9시, 12시, 17시에 SCM 변경사항을 확인합니다.
+    }
+
+    stages {
+        stage ('clone') {
+            steps {
+                echo 'Cloning...'  // 레포지토리를 클론합니다.
+                sshagent(['git']) {  // 'git'은 SSH 키의 ID
+                    git branch: 'master', url: 'git@github.com:pdh9523/security-demo.git'
+                    
+                    dir('security-demo') {
+                        sh 'git submodule init'  // 서브모듈을 초기화합니다.
+                        sh 'git submodule update --recursive --remote'  // 서브모듈을 업데이트합니다.
+                    }
+                }
+                echo 'Cloning done'  // 클론 작업 완료를 출력합니다.
+            }
+        }
+
+
+        stage ('build and Deploy') {
+            parallel {
+                stage('BE Process') {
+                    stages {
+                        stage('BE-Build') {
+                            steps {
+                                echo "BE Building.."  // 백엔드 빌드를 시작합니다.
+                                dir('./server') {
+                                    sh 'chmod +x ./gradlew'  // Gradle 권한을 설정합니다.
+                                    sh './gradlew clean build -x test'  // 테스트를 제외하고 빌드를 진행합니다.
+                                }
+                            }
+                        }
+                        stage('BE-Delivery') {
+                            steps {
+                                dir('./server') {
+                                    echo "Delivery BE Image.."  // 백엔드 도커 이미지를 준비합니다.
+                                    withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
+                                        sh "echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin"
+                                        // Docker Hub에 로그인합니다.
+                                        sh "docker build -t $DOCKER_USERNAME/security_demo_server:${env.BUILD_ID} ."
+                                        // 백엔드 도커 이미지를 빌드합니다.
+                                        sh "docker tag $DOCKER_USERNAME/security_demo_server:${env.BUILD_ID} $DOCKER_USERNAME/security_demo_server:latest"
+                                        // 최신 태그로 이미지 태그를 설정합니다.
+                                        sh "docker push $DOCKER_USERNAME/security_demo_server:${env.BUILD_ID}"  
+                                        // 버전이 있는 이미지를 푸시합니다.
+                                        sh "docker push $DOCKER_USERNAME/security_demo_server:latest"  
+                                        // 최신 이미지를 푸시합니다.
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                stage('FE Process') {
+                    stages {
+                        stage('FE-Build') {
+                            steps {
+                                echo "FE Building.."  // 프론트엔드 빌드를 시작합니다.
+                                dir('./frontend') {
+                                    // withCredentials([file(credentialsId: 'frontend-env', variable: 'ENV_FILE')]) {
+                                    //     sh 'cat $ENV_FILE > .env'  // 환경 파일을 로드합니다.
+                                    // }
+                                    sh 'npm install'  // npm 패키지를 설치합니다.
+                                    sh 'npm run build'  // 프론트엔드 빌드를 진행합니다.
+                                }
+                            }
+                        }
+
+                        stage('FE-Delivery') {
+                            steps {
+                                dir('./frontend') {
+                                    echo "Delivery FE Image.."  // 프론트엔드 도커 이미지를 준비합니다.
+                                    withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
+                                        sh "echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin"  
+                                        // Docker Hub에 로그인합니다.
+                                        sh "docker build -t $DOCKER_USERNAME/security_demo_frontend:${env.BUILD_ID} ."  
+                                        // 프론트엔드 도커 이미지를 빌드합니다.
+                                        sh "docker tag $DOCKER_USERNAME/security_demo_frontend:${env.BUILD_ID} $DOCKER_USERNAME/security_demo_frontend:latest"  
+                                        // 최신 태그로 이미지 태그를 설정합니다.
+                                        sh "docker push $DOCKER_USERNAME/security_demo_frontend:${env.BUILD_ID}"  
+                                        // 버전이 있는 이미지를 푸시합니다.
+                                        sh "docker push $DOCKER_USERNAME/security_demo_frontend:latest"  
+                                        // 최신 이미지를 푸시합니다.
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        stage('Deploy to EC2') {
+            steps {
+                echo 'EC2에 배포 시작!'  // EC2에 배포를 시작합니다.
+                withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
+                    sshagent(credentials: ['ubuntu']) { 
+                        sh "ssh -o StrictHostKeyChecking=no ubuntu@$AWS_IP 'cd security-demo && sudo docker-compose --profile prod down'"
+                        // 기존 프로세스를 종료합니다.
+                        sh "ssh -o StrictHostKeyChecking=no ubuntu@$AWS_IP 'frontend_images=\$(sudo docker images -q $DOCKER_USERNAME/security_demo_frontend:latest) && if [ -n \"\$frontend_images\" ]; then sudo docker rmi -f \$frontend_images; fi'"
+                        // 기존 프론트엔드 이미지를 삭제합니다.
+                        sh "ssh -o StrictHostKeyChecking=no ubuntu@$AWS_IP 'backend_images=\$(sudo docker images -q $DOCKER_USERNAME/security_demo_server:latest) && if [ -n \"\$backend_images\" ]; then sudo docker rmi -f \$backend_images; fi'"
+                        // 기존 백엔드 이미지를 삭제합니다.
+                        sh "ssh -o StrictHostKeyChecking=no ubuntu@$AWS_IP 'sudo docker image prune -f'"
+                        // 사용되지 않는 이미지를 정리합니다.
+                        sh "ssh -o StrictHostKeyChecking=no ubuntu@$AWS_IP 'cd security-demo && sudo docker-compose --profile prod up -d'"
+                        // 새 컨테이너를 실행합니다.
+                    }
+                }
+                echo 'EC2에 배포 완료!'  // 배포 완료 메시지를 출력합니다.
+            } 
+        }
+    }
+
+    post {
+        always {
+            cleanWs(cleanWhenNotBuilt: false, deleteDirs: true, 
+            disableDeferredWipeout: true, notFailBuild: true)  // 모든 작업이 완료되면 워크스페이스를 정리합니다.
+        }
+    }
+
+}

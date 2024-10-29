@@ -3,8 +3,8 @@
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { grey } from "@mui/material/colors";
-import {ChangeEvent, useState} from "react";
-import {getSession, signIn} from "next-auth/react";
+import { ChangeEvent, useState } from "react";
+import { signIn } from "next-auth/react";
 import {
     Box,
     Container,
@@ -20,29 +20,21 @@ interface HandleLoginProps {
     password: string;
 }
 
-export function handleValueChange(
-    event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-    setFunction: (value: string) => void,
-) {
-    setFunction(event.target.value);
-}
 
-export async function fetchSessionData() {
-    const session = await getSession();
 
-    if (session) {
-        console.log("Access Token:", session.accessToken);
-        console.log("Refresh Token:", session.refreshToken);
-    } else {
-        console.log("No active session found");
-    }
-}
 export default function App() {
     const router = useRouter();
-
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
+
+    // handleValueChange 함수를 컴포넌트 내부에 위치
+    function handleValueChange(
+        event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+        setFunction: (value: string) => void
+    ) {
+        setFunction(event.target.value);
+    }
 
     async function handleLogin({ email, password }: HandleLoginProps) {
         const result = await signIn("credentials", {
@@ -52,10 +44,8 @@ export default function App() {
         });
 
         if (result?.error) {
-            // 로그인 실패 시 에러 메시지 표시
             setError("로그인에 실패했습니다. 이메일과 비밀번호를 확인해주세요.");
         } else {
-            // 로그인 성공 시 메인 페이지로 이동
             router.push("/");
         }
     }
@@ -154,7 +144,7 @@ export default function App() {
                                 <Image
                                     src="/kakao_login_medium_narrow.png"
                                     alt="kakaoLogin"
-                                    layout="fill" // 부모의 크기에 맞게 조절
+                                    layout="fill"
                                     objectFit="contain"
                                 />
                             </Box>

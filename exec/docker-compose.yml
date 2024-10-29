@@ -1,0 +1,50 @@
+version: '3'  # Docker Compose 파일 버전
+
+services:
+  jenkins:  # 젠킨스 컨테이너 설정
+    build:
+      context: .  # Dockerfile이 위치한 현재 디렉토리를 컨텍스트로 지정
+      dockerfile: Dockerfile  # 사용할 Dockerfile의 이름을 지정
+    container_name: jenkins-blueocean   # 컨테이너 이름을 jenkins-blueocean으로 지정
+    restart: on-failure # 컨테이너가 실패할 때 자동 재시작
+    networks:
+      - jenkins   # jenkins 네트워크에 연결
+    environment:
+      - DOCKER_HOST=tcp://docker:2376   # Docker의 호스트 주소를 지정 (docker 컨테이너의 2376 포트 사용)
+      - DOCKER_CERT_PATH=/certs/client    # Docker 인증서 경로 지정 
+      - DOCKER_TLS_VERIFY=1   # Docker TLS 인증 활성화
+      - JENKINS_OPTS="--httpPort=9090"   # 기본 포트를 9090으로 변경
+    volumes:
+      - jenkins-data:/var/jenkins_home    # Jenkins 데이터를 영구 저장하는 볼륨
+      - jenkins-docker-certs:/certs/client:ro   # Docker 인증서를 읽기 전용으로 연결 ro: read-only
+    ports:
+      - "9999:9090"   # 로컬 9999 포트를 jenkins의 8080 포트에 연결
+      - "8080:8080"   # 8080 포트를 spring boot 의 8080 포트와 연결
+      - "3000:3000"
+      - "50000:50000"   # jenkins 에이전트와의 통신을 위한 50000 포트 매핑
+
+  docker:   # Docker in Docker 컨테이너 설정
+    image: docker:dind    # Docker-in-Docker 이미지를 사용
+    privileged: true    # Docker-in-Docker 사용을 위한 권한 부여
+    container_name: jenkins-docker    # 컨테이너 이름을 jenkins-docker로 지정
+    restart: unless-stopped   # 컨테이너가 중지될 때만 다시 시작하지 않음
+    networks:
+      jenkins:
+        aliases:
+          - docker    # 이 네트워크에서 docker라는 이름으로 접근 가능
+    environment:
+      - DOCKER_TLS_CERTDIR=/certs   # Docker 인증서 디렉토리 설정
+    volumes:
+      - jenkins-docker-certs:/certs/client    # Docker 인증서를 위한 볼륨
+      - jenkins-data:/var/jenkins_home    # Jenkins 데이터 공유를 위한 볼륨
+    ports:
+      - "2376:2376"   # Docker 데몬의 2376 포트를 로컬 호스트와 매핑
+    command: --storage-driver overlay2    # Docker 저장소 드라이버로 overlay2를 사용
+
+networks:
+  jenkins:
+    name: jenkins   # 커스텀 네트워크 이름을 jenkins로 설정
+
+volumes:
+  jenkins-data:   # Jenkins 데이터를 영구적으로 저장할 볼륨
+  jenkins-docker-certs:   # Docker 인증서 데이터를 저장할 볼륨

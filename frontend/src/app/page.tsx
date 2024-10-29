@@ -1,8 +1,8 @@
 "use client"
 
-import api from "@/lib/api";
+import {api} from "@/lib/api";
 import {useEffect, useState} from "react";
-import {fetchSessionData} from "@/app/(router)/user/login/page";
+import {fetchSessionData} from "@/util/sessionUtil";
 
 
 export default function App() {
